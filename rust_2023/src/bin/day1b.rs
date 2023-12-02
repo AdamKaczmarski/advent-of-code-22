@@ -61,12 +61,7 @@ fn get_digit(line: &str, reverse: bool) -> char {
     return match find_spelled_idx(line, reverse, &mut idx) {
         None => line.chars().nth(idx).unwrap(),
         Some(len_found) => {
-            let spld: &str;
-            if reverse {
-                spld = &line[idx..idx + len_found];
-            } else {
-                spld = &line[idx..idx + len_found];
-            }
+            let spld = &line[idx..idx + len_found];
             match_spld_digits(spld)
         }
     };
