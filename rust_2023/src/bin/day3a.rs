@@ -90,6 +90,7 @@ fn get_valid_sum_before_after(
 }
 
 fn main() -> Result<()> {
+    panic!("doesn't work");
     let mut sum: usize = 0;
 
     let text = fs::read_to_string("./src/bin/day3.prod")?;
@@ -98,6 +99,7 @@ fn main() -> Result<()> {
         let values: Vec<&str> = extract_numbers_from_line(line);
 
         for value in values {
+            //TODO thsi search here is wrong, value can be repeated
             let start_idx = line.find(value).unwrap();
             let length_to_take = value.len();
 
