@@ -17,15 +17,18 @@ impl FromStr for Reveal {
         let mut red: usize = 0;
         let mut green: usize = 0;
         let mut blue: usize = 0;
-        for cube_type in s.split(",").collect_vec() {
-            let num_color = cube_type.trim().split(" ").collect_vec();
-            match num_color.get(1).unwrap().to_owned() {
-                "red" => red = num_color.get(0).unwrap().parse().unwrap(),
-                "blue" => blue = num_color.get(0).unwrap().parse().unwrap(),
-                "green" => green = num_color.get(0).unwrap().parse().unwrap(),
-                _ => panic!("Couldn't parse {:?}", s),
-            }
-        }
+        s.split(",").for_each(|cube_type| {
+            cube_type
+                .trim()
+                .split(" ")
+                .tuples()
+                .for_each(|(val, color)| match color {
+                    "red" => red = val.parse().unwrap(),
+                    "blue" => blue = val.parse().unwrap(),
+                    "green" => green = val.parse().unwrap(),
+                    _ => panic!("Couldn't parse {:?}", color),
+                });
+        });
 
         return Ok(Reveal { red, blue, green });
     }
@@ -57,13 +60,12 @@ impl FromStr for Game {
         let mut min_blue: usize = 0;
         let mut min_green: usize = 0;
         //"Game <num>: "
-        let reveals_tmp = s[colon_idx+1..].split(";").collect_vec();
-        for rev in &reveals_tmp {
+        s[colon_idx + 1..].split(";").for_each(|rev| {
             let reveal: Reveal = rev.trim().parse().unwrap();
             compare_and_set_min(&reveal.red, &mut min_red);
             compare_and_set_min(&reveal.green, &mut min_green);
             compare_and_set_min(&reveal.blue, &mut min_blue);
-        }
+        });
 
         return Ok(Game {
             id,
