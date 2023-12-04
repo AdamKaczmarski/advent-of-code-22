@@ -87,7 +87,7 @@ fn compare_and_set_max(value: &u8, max: &mut u8) {
 }
 
 fn main() -> Result<()> {
-    let sum: usize = fs::read_to_string("./src/bin/day2.prod")?
+    let sum: usize = fs::read_to_string("./inputs/day2.prod")?
         .lines()
         .map(|line| {
             let game: Game = line.parse().unwrap();

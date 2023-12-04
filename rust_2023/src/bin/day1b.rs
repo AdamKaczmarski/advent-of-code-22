@@ -68,7 +68,7 @@ fn get_digit(line: &str, reverse: bool) -> char {
 }
 
 fn main() -> Result<()> {
-    let sum: i32 = fs::read_to_string("./src/bin/day1.prod")?
+    let sum: i32 = fs::read_to_string("./inputs/day1.prod")?
         .lines()
         .map(|line| {
             let mut digits = String::from(get_digit(line, false));

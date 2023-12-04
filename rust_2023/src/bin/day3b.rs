@@ -35,7 +35,7 @@ impl Line {
 
 fn main() -> Result<()> {
     let mut lines: Vec<Line> = vec![];
-    fs::read_to_string("./src/bin/day3.prod")?
+    fs::read_to_string("./inputs/day3.prod")?
         .lines()
         .enumerate()
         .for_each(|(idx, line)| {
