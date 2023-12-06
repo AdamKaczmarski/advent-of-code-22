@@ -1,6 +1,6 @@
 use anyhow::Result;
 use itertools::Itertools;
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, fs, time::Instant};
 
 #[derive(Clone, Eq, Hash, PartialEq, Debug, PartialOrd, Ord)]
 enum Category {
@@ -11,44 +11,6 @@ enum Category {
     LightToTemperature,
     TemperatureToHumidity,
     HumidityToLocation,
-}
-
-#[derive(Debug, Clone)]
-struct Seed {
-    id: usize,
-    soil: usize,
-    fertilizer: usize,
-    water: usize,
-    light: usize,
-    temp: usize,
-    humidity: usize,
-    location: usize,
-}
-impl Seed {
-    fn set_position_to_category(&mut self, category: &Category, position: usize) {
-        match category {
-            Category::SeedToSoil => self.soil = position,
-            Category::SoilToFertilizer => self.fertilizer = position,
-            Category::FertilizerToWater => self.water = position,
-            Category::WaterToLight => self.light = position,
-            Category::LightToTemperature => self.temp = position,
-            Category::TemperatureToHumidity => self.humidity = position,
-            Category::HumidityToLocation => self.location = position,
-        }
-    }
-
-    fn get_relevant_position_for_category(&self, category: &Category) -> usize {
-        let val = match category {
-            Category::SeedToSoil => self.id,
-            Category::SoilToFertilizer => self.soil,
-            Category::FertilizerToWater => self.fertilizer,
-            Category::WaterToLight => self.water,
-            Category::LightToTemperature => self.light,
-            Category::TemperatureToHumidity => self.temp,
-            Category::HumidityToLocation => self.humidity,
-        };
-        return val;
-    }
 }
 
 #[derive(Ord, PartialOrd, PartialEq, Eq, Debug, Clone)]
@@ -102,20 +64,8 @@ struct InRangeDecisionPosition {
     position: usize,
 }
 
-/*
- * 1. Read the first line to get the seeds
- * 2. A Map that will map each categroy (seed-to-soil to it's starting and ending location)
- * 3. Based on the map Create a Seed struct.
- * ?4. Maintain while parsing it all for each seed just maintain min location
- * ?4. Find the lowerst location of seed.
- *
- * OR
- *
- * 2. A Map that will map each categroy (seed-to-soil to it's starting and ending location)
- * 2a. While mapping just count the seed's number according to category
- *
- */
-fn parse_seed_ids(line: &str, seeds_vec: &mut Vec<Seed>) {
+fn parse_seed_ids_only(line: &str) -> Vec<usize> {
+    let mut seeds: Vec<usize> = Vec::new();
     let colon_idx = line.find(":").unwrap();
     let line = &line[colon_idx + 1..];
     let trimmed_line = line.trim();
@@ -125,19 +75,11 @@ fn parse_seed_ids(line: &str, seeds_vec: &mut Vec<Seed>) {
         .for_each(|(start_seed_id, range)| {
             let start_seed_id = start_seed_id.parse::<usize>().unwrap();
             let range = range.parse::<usize>().unwrap();
-            for id in start_seed_id..start_seed_id+range  {
-                seeds_vec.push(Seed {
-                    id,
-                    soil: 0,
-                    fertilizer: 0,
-                    water: 0,
-                    light: 0,
-                    temp: 0,
-                    humidity: 0,
-                    location: 0,
-                })
+            for id in start_seed_id..start_seed_id + range {
+                seeds.push(id)
             }
         });
+    return seeds;
 }
 
 fn match_category(line: &str) -> Category {
@@ -154,17 +96,20 @@ fn match_category(line: &str) -> Category {
 }
 
 fn main() -> Result<()> {
+    let now = Instant::now();
     let input_lines = fs::read_to_string("./inputs/day5.prod")?;
     let input_lines = input_lines.trim().split("\n\n").collect_vec();
-    let mut seeds: Vec<Seed> = Vec::new();
-    parse_seed_ids(input_lines.get(0).unwrap(), &mut seeds);
     let mut category_maps: HashMap<Category, Vec<MapRange>> = HashMap::new();
+    println!("reading ranges");
     input_lines.iter().skip(1).for_each(|map_and_data| {
         let map = map_and_data.split("\n").collect_vec();
         let category = match_category(map.get(0).unwrap());
         map.iter().skip(1).for_each(|range| {
             let map_range: MapRange = MapRange::new(range);
             match category_maps.get_mut(&category) {
+                //TODO_HERE probably here we could to the comparison 
+                //instead of pushing to the vec
+                //for context look TODO comment below
                 Some(ranges) => ranges.push(map_range),
                 None => {
                     let _ = category_maps.insert(category.clone(), vec![map_range]);
@@ -172,49 +117,40 @@ fn main() -> Result<()> {
             }
         })
     });
+    let mut seed_ids: Vec<usize> = parse_seed_ids_only(input_lines.get(0).unwrap());
     let mut min_location: usize = usize::MAX;
-    seeds.iter_mut().for_each(|seed| {
+    println!("comparing seeds now");
+    let mut seed_id_tmp: usize = 0;
+    //TODO This can be optimized so well, for example it could be put into the 
+    //part where ranges are extracted (look TODO_HERE comment)
+    //but it's 1am, i want to go to sleep
+    seed_ids.iter_mut().for_each(|seed_id| {
+        seed_id_tmp = seed_id.clone();
         category_maps
             .iter_mut()
             .sorted()
             .for_each(|(category, ranges)| {
                 for range in ranges {
-                    let in_range_pos: InRangeDecisionPosition = range
-                        .get_dest_pos_from_src(seed.get_relevant_position_for_category(category));
+                    let in_range_pos: InRangeDecisionPosition =
+                        range.get_dest_pos_from_src(seed_id_tmp);
                     if in_range_pos.is_in_range {
                         //If it is in the range break the loop
-                        seed.set_position_to_category(category, in_range_pos.position);
+                        seed_id_tmp = in_range_pos.position;
                         break;
                     }
                     //Loop over all ranges to check if it is there
                     // It is going to do some overwrite but that's to be though about later
-                    seed.set_position_to_category(category, in_range_pos.position);
+                    // seed_id = &mut in_range_pos.position;
+                    seed_id_tmp = in_range_pos.position;
                 }
                 if category == &Category::HumidityToLocation {
-                    min_location = std::cmp::min(seed.location, min_location);
+                    min_location = std::cmp::min(seed_id_tmp, min_location);
                 }
             });
     });
-    // for seed in seeds {
-    //     println!("{:?}", seed);
-    // }
 
     println!("Min location: {}", min_location);
+    println!("In time {:?}", now.elapsed());
 
     Ok(())
-}
-
-impl Default for Seed {
-    fn default() -> Self {
-        return Seed {
-            id: 0,
-            soil: 0,
-            fertilizer: 0,
-            water: 0,
-            light: 0,
-            temp: 0,
-            humidity: 0,
-            location: 0,
-        };
-    }
 }
