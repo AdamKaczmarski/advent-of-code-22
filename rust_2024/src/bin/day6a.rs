@@ -13,10 +13,10 @@ enum Direction {
 impl Direction {
     fn resolve_dir(self) -> (i32, i32) {
         match self {
-            Direction::Up => (-1, 0),
-            Direction::Right => (0, 1),
-            Direction::Down => (1, 0),
-            Direction::Left => (0, -1),
+            Direction::Left => (-1, 0),
+            Direction::Down => (0, 1),
+            Direction::Right => (1, 0),
+            Direction::Up => (0, -1),
         }
     }
 
@@ -51,7 +51,7 @@ fn main() -> Result<()> {
         let input = fs::read_to_string(file)?;
         let input: Vec<&str> = input.split("\n").collect();
         let mut visited: HashSet<(i32, i32)> = HashSet::new();
-        let Some((mut y, mut x)) = find_start(&input) else {
+        let Some((mut x, mut y)) = find_start(&input) else {
             panic!("Start not found");
         };
         let start_char = input[y as usize].chars().nth(x as usize).unwrap();
@@ -61,19 +61,19 @@ fn main() -> Result<()> {
                 break;
             }
             let c = input[y as usize].chars().nth(x as usize).unwrap();
-            let (y1, x1) = dir.resolve_dir();
+            let (x1,y1) = dir.resolve_dir();
             match match_tile(c) {
                 Tile::Wall => {
-                    y -= y1;
                     x -= x1;
+                    y -= y1;
                     dir = dir.rot_right();
                 }
                 Tile::Dot => {
-                    if !visited.contains(&(y, x)) {
-                        visited.insert((y, x));
+                    if !visited.contains(&(x,y)) {
+                        visited.insert((x,y));
                     }
-                    y += y1;
                     x += x1;
+                    y += y1;
                 }
             }
         }
@@ -95,7 +95,7 @@ fn find_start(input: &Vec<&str>) -> Option<(i32, i32)> {
         for j in 0..input[i].len() {
             let c = input[i].chars().nth(j).unwrap();
             match c {
-                'v' | '<' | '^' | '>' => return Some((i as i32, j as i32)),
+                'v' | '<' | '^' | '>' => return Some((j as i32,i as i32)),
                 _ => {
                     continue;
                 }
