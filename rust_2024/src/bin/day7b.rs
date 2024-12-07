@@ -19,11 +19,14 @@ fn possibility(
 ) -> bool {
     match numbers.get(idx) {
         Some(num) => {
+            if cur > result {
+                return false;
+            }
             match operation {
                 Operator::Add => cur += num,
                 Operator::Multiply => cur *= num,
                 Operator::Concat => {
-                    let mut tmp  = cur.to_string();
+                    let mut tmp = cur.to_string();
                     tmp.push_str(num.to_string().as_str());
                     cur = tmp.parse().unwrap();
                 }

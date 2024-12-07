@@ -18,6 +18,9 @@ fn possibility(
 ) -> bool {
     match numbers.get(idx) {
         Some(num) => {
+            if cur > result {
+                return false;
+            }
             match operation {
                 Operator::Add => cur += num,
                 Operator::Multiply => cur *= num,
@@ -36,7 +39,7 @@ fn possibility(
 }
 
 fn main() -> Result<()> {
-    let files = ["./inputs/day7.test" , "./inputs/day7.prod"];
+    let files = ["./inputs/day7.test", "./inputs/day7.prod"];
     for file in files {
         let result: usize = fs::read_to_string(file)?
             .lines()
