@@ -17,7 +17,7 @@ fn read_input(file_name: &str) -> Result<Input<char>> {
 }
 
 fn main() -> Result<()> {
-    let files = ["./inputs/day12.test3", "./inputs/day12.prod"];
+    let files = ["./inputs/day12.test", "./inputs/day12.prod"];
     for file in files {
         let now = Instant::now();
         let res = solve(file)?;
@@ -30,24 +30,10 @@ fn main() -> Result<()> {
 mod tests {
     use super::*;
     #[test]
-    fn basic_example() {
+    fn example() {
         let file = "./inputs/day12.test";
         let result = solve(file).unwrap();
         let expected = 140;
         assert_eq!(result, expected)
     }
-    // #[test]
-    // fn region_inside_example() {
-    //     let file = "./inputs/day12.test";
-    //     let result = solve(file).unwrap();
-    //     let expected = 772;
-    //     assert_eq!(result, expected)
-    // }
-    // #[test]
-    // fn example() {
-    //     let file = "./inputs/day12.test3";
-    //     let result = solve(file).unwrap();
-    //     let expected = 1930;
-    //     assert_eq!(result, expected)
-    // }
 }
