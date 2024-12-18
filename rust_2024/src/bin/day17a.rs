@@ -1,7 +1,7 @@
 use anyhow::Result;
 use itertools::Itertools;
 use regex::Regex;
-use std::{fs, time::Instant};
+use std::{fs, ops::BitXor, time::Instant};
 
 #[derive(Debug)]
 enum Instruction {
@@ -25,21 +25,24 @@ struct Computer {
 impl Computer {
     fn insert_out(&mut self, v: usize) {
         self.out.push(v);
-        // println!("{:?}",self.out);
     }
-    fn out_to_joined_number(self) -> usize {
+    fn _out_to_joined_number(self) -> usize {
         self.out
             .into_iter()
             .join("")
-            .parse::<usize>()
-            .expect("Couldn't parse out as String to usize")
+            .parse()
+            .expect("Couldnt parse out to number")
+    }
+    fn out_to_comma_string(self) -> String {
+        self.out
+            .into_iter()
+            .join(",")
     }
     fn compute(&mut self, programs: Vec<usize>) {
         let mut instr_ptr = 0;
         while instr_ptr < programs.len() {
             let instr = parse_opcode(programs[instr_ptr]);
             let operand = programs[instr_ptr + 1];
-            // println!("{:?} | {}", instr, operand);
             instr_ptr += 2;
             match instr {
                 Instruction::Adv => self.adv(operand),
@@ -55,7 +58,6 @@ impl Computer {
                 Instruction::Bdv => self.bdv(operand),
                 Instruction::Cdv => self.cdv(operand),
             };
-            // self._print_registers();
         }
     }
     fn _print_registers(&self) {
@@ -73,7 +75,7 @@ impl Computer {
     }
     //1
     fn bxl(&mut self, operand: usize) {
-        self.register_b = self.register_b ^ operand;
+        self.register_b = self.register_b.bitxor(operand);
     }
     //2
     fn bst(&mut self, operand: usize) {
@@ -89,19 +91,21 @@ impl Computer {
     }
     //4
     fn bxc(&mut self) {
-        self.register_b = self.register_b ^ self.register_c;
+        self.register_b = self.register_b.bitxor(self.register_c);
     }
     //5
     fn out(&mut self, operand: usize) {
         let operand = self.resolve_combo(operand);
         self.insert_out(operand % 8);
     }
+    //6
     fn bdv(&mut self, operand: usize) {
         let numerator = self.register_a;
         let denominator = 2_u32.pow(self.resolve_combo(operand) as u32) as usize;
         let div = numerator / denominator;
         self.register_b = div;
     }
+    //7
     fn cdv(&mut self, operand: usize) {
         let numerator = self.register_a;
         let denominator = 2_u32.pow(self.resolve_combo(operand) as u32) as usize;
@@ -109,7 +113,6 @@ impl Computer {
         self.register_c = div;
     }
     fn resolve_combo(&self, operand: usize) -> usize {
-        println!("COMBO {}", operand);
         match operand {
             0..=3 => operand,
             4 => self.register_a,
@@ -123,12 +126,10 @@ impl Computer {
 
 type Input<T> = T;
 
-fn solve(file_name: &str) -> Result<usize> {
+fn solve(file_name: &str) -> Result<String> {
     let (mut computer, program): Input<(Computer, Vec<usize>)> = read_input(file_name)?;
-    println!("{:?}", computer);
-    println!("{:?}", program);
     computer.compute(program);
-    Ok(computer.out_to_joined_number())
+    Ok(computer.out_to_comma_string())
 }
 
 fn read_input(file_name: &str) -> Result<Input<(Computer, Vec<usize>)>> {
@@ -161,10 +162,6 @@ fn read_input(file_name: &str) -> Result<Input<(Computer, Vec<usize>)>> {
     ))
 }
 
-fn truncate_to_integer(num: usize) -> usize {
-    num % 10
-}
-
 fn parse_opcode(op: usize) -> Instruction {
     match op {
         0 => Instruction::Adv,
@@ -181,9 +178,8 @@ fn parse_opcode(op: usize) -> Instruction {
 
 fn main() -> Result<()> {
     let files = [
-        // "./inputs/day17.test",
+        "./inputs/day17.test",
         "./inputs/day17.prod",
-        // "./inputs/day17.prod2",
     ];
     for file in files {
         let now = Instant::now();
@@ -201,7 +197,7 @@ mod tests {
     fn example() {
         let file = "./inputs/day17.test";
         let result = solve(file).unwrap();
-        let expected = 4635635210;
+        let expected = "4,6,3,5,6,3,5,2,1,0";
         assert_eq!(result, expected)
     }
 
@@ -228,7 +224,7 @@ mod tests {
         let p = vec![5, 0, 5, 1, 5, 4];
         c.compute(p);
 
-        assert_eq!(c.out_to_joined_number(), 12)
+        assert_eq!(c._out_to_joined_number(), 12)
     }
     #[test]
     fn instruction_3() {
@@ -242,7 +238,7 @@ mod tests {
         c.compute(p);
 
         assert_eq!(c.register_a, 0);
-        assert_eq!(c.out_to_joined_number(), 42567777310);
+        assert_eq!(c._out_to_joined_number(), 42567777310);
     }
     #[test]
     fn instruction_4() {
